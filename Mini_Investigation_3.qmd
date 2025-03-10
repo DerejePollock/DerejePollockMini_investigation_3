@@ -1,13 +1,13 @@
 ---
 title: "STAT455 - Mini-Investigation 3"
-author: "Dereje Pollock"
 format: pdf
 editor: visual
-geometry: "left=1.5cm,right=1.5cm,top=2cm,bottom=2cm"
 ---
+
 ```{r, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE, fig.height = 3, fig.width = 4)
 ```
+
 ```{r}
 library(tidyverse)
 library(dplyr)
@@ -15,6 +15,7 @@ library(knitr)
 library(kableExtra)
 install.packages("tinytex")
 ```
+
 How does age affect male elephant mating patterns? An article by Poole(1989) investigated whether mating success in male elephants increases with age and whether there is a peak age for mating success. To address this question, the research team followed 41 elephants for one year and recorded both their ages and their number of matings. The data (Ramsey and Schafer) is found in `elephant.csv`, and the variables are: - `MATINGS` = the number of matings in a given year - `AGE` = the age of the elephant in years.
 
 ```{r}
@@ -25,82 +26,20 @@ We want to model the number of matings, using age as the explanatory variable.
 
 ### a) Which type of model is most appropriate for these data? Explain your reasoning.
 
-We could use a Poisson regression model for elephant matings, but it might have trouble handling many zeros that could show up for elephants that don't mate in the year the study was conducted. If this is the case, we could use a Zero-Inflated Poisson model. This would deal with the zeros separately, and help us understand the likelihood of elephants not mating as well as the effects of age on mating frequency for elephants that do mate. We can check to see if the distribution of elephant Matings follow a poisson distribution, or if it would be better to use the ZIP model.
-
-```{r fig.cap="Distribution of matings counts.", echo = FALSE}
-# Load necessary libraries
-library(ggplot2)
-
-# Create a histogram with an equal aspect ratio for x and y axes
-ggplot(elephants, aes(x = MATINGS)) +
-  geom_histogram(binwidth = 1, fill = "skyblue", color = "black") +
-  labs(x = "Number of Matings",
-       y = "Frequency") +
-  scale_x_continuous(breaks = seq(0, max(elephants$MATINGS), by = 1)) +
-  scale_y_continuous(breaks = seq(0, 10, by = 1)) +
-  theme(plot.margin = unit(c(1, 1, 1, 1), "cm"),
-   axis.text.x = element_text(size = 6),  # Smaller x-axis text
-        axis.text.y = element_text(size = 6),  # Smaller y-axis text
-        axis.title.x = element_text(size = 6), # Smaller x-axis title
-        axis.title.y = element_text(size = 6))+ # Smaller y-axis title
-  coord_fixed(ratio = 0.75)  # Adjusts the aspect ratio so that 1 unit on the x-axis is equivalent to 0.75 units on the y-axis
-
-
-```
-
-From the histogram, we can see that it roughly follows the Poisson distribution, so for simplicity I will use the Poisson model.
+We can use a Poisson regression model for elephant matings, because the response is a discrete and positive count 
 
 ### b) Fit the model you chose, with a linear term for AGE. Display the model summary. Also display confidence intervals associated with the model parameters.
 
 # M1
 
-Consider $Y_{i}$ to be the number of matings for the $i$-th elephant, where $i = 1, 2, \ldots, n$, and $n$.
-
-$$
-Y_{i} \sim \text{Poisson}(\lambda_{i})
-$$
-
-The relationship between the expected number of matings and the age of the elephant is log-linear, given by:
-
-$$
-\log(\lambda_{i}) = \beta_{0} + \beta_{1} \text{AGE}_{i}
-$$
-
-
 ```{r, echo=TRUE}
 MP1 = glm(MATINGS ~ AGE, family = poisson, data = elephants)
+
+summary(MP1)
 ```
-
-```{r, echo=TRUE}
-
-# Call:
-# glm(formula = MATINGS ~ AGE, family = poisson, data = elephants)
-# 
-# Coefficients:
-#             Estimate Std. Error z value Pr(>|z|)    
-# (Intercept) -1.58201    0.54462  -2.905  0.00368 ** 
-# AGE          0.06869    0.01375   4.997 5.81e-07 ***
-# ---
-# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
-# 
-# (Dispersion parameter for poisson family taken to be 1)
-# 
-#     Null deviance: 75.372  on 40  degrees of freedom
-# Residual deviance: 51.012  on 39  degrees of freedom
-# AIC: 156.46
-# 
-# Number of Fisher Scoring iterations: 5
-# 
-# (Intercept)         AGE 
-#   0.2055619   1.0711071 
-# Waiting for profiling to be done...
-#                 2.5 %    97.5 %
-# (Intercept) 0.0694813 0.5892357
-# AGE         1.0425585 1.1003602
-```
-
 
 ## Exponentiated Coefficients for M1:
+
 ```{r, echo = FALSE}
 # Calculate the exponentiated coefficients (rate ratios)
 exp_coef <- exp(coef(MP1))
@@ -111,11 +50,14 @@ exp_coef
 ```
 
 ## Confidence Intervals for M1
+
 ```{r, echo=TRUE}
 confint(MP1)
 
 ```
+
 ## Exponentiated Confidence Intervals:
+
 ```{r, echo = FALSE}
 
 # Calculate confidence intervals and exponentiate them
@@ -126,17 +68,14 @@ exp_ci <- exp(ci)
 exp_ci
 ```
 
-
 ### c) Write 1-2 sentences interpreting the estimate and p-value associated with the `age` coefficient. In your interpretations, write rounded numbers (i.e. say 3.22 instead of $e^{1.17}$).
 
 The exponentiated coefficient for AGE is approximately 1.07, indicating that for each one-year increase in age, the expected number of matings increases by about 7%. This effect is statistically significant, as indicated by the very small p-value (5.81e-07), suggesting strong evidence against the null hypothesis that age has no effect on the number of matings.
 
 ### d) For each age, calculate the mean number of matings. Take the log of each mean and plot it by AGE. Explain what the plot tells us about the appropriateness of the linearity assumption in Poisson regression.
 
-
 ```{r }
 
-# Assuming your data is in a data frame called 'elephants'
 # Calculate the mean number of matings for each age and round to two decimal places
 age_means <- elephants %>%
   group_by(AGE) %>%
@@ -150,7 +89,6 @@ age_means <- elephants %>%
 age_means$log_mean_matings <- log(age_means$mean_matings)
 
 ```
-
 
 ```{r fig.cap= "Log of Mean Matings by Age."}
 # Plot the log of the mean matings by age
@@ -167,11 +105,10 @@ ggplot(age_means, aes(x = AGE, y = log_mean_matings)) +
         axis.title.y = element_text(size = 8)) # Smaller y-axis title
 
 ```
+
 The points seem to follow a linear trend, suggesting that the log-linear relationship assumed in Poisson regression is reasonable. Overall, the plot supports the linearity assumption and the simple linear model seems to be appropriate for now.
 
-
 ### e) Group the elephants by age, with age ranges of (25-30\], (30-35\], (30-40\], (40-45\], (45-50\], (50-55\]. Create histograms displying the number of matings by elephants in each age group. (Hint: use the `cut` function). Create a table displaying the average number of matings in each age range, as well as the variance. Does this table raise any concerns about any assumptions related to the Poisson regression model? If so, which?
-
 
 ```{r}
 AgeGroups = cut(elephants$AGE,
@@ -180,10 +117,11 @@ Groups <- data.frame(AgeGroups,elephants)
 Groups <- Groups %>% group_by(AgeGroups)%>%summarize(Mean_Matings=mean(MATINGS), Var_Matings=var(MATINGS), n=n()) 
 kable(Groups, caption="Grouped by Age")
 ```
-The table raises concerns about the mean=variance assumption. Some groups, like (25,30] and (30,35], show underdispersion while (35,40] and (45,50], show overdispersion. This suggests that a standard Poisson model may not be appropriate, and we might consider using a quasi-Poisson model. Additionally, the small sample sizes in some groups (45,50] and (50,55], make their variance estimates unreliable. We might want to combine these into one group.
 
+The table raises concerns about the mean=variance assumption. Some groups, like (25,30\] and (30,35\], show underdispersion while (35,40\] and (45,50\], show overdispersion. This suggests that a standard Poisson model may not be appropriate, and we might consider using a quasi-Poisson model. Additionally, the small sample sizes in some groups (45,50\] and (50,55\], make their variance estimates unreliable. We might want to combine these into one group.
 
 ### f) Perform a goodness of fit test for the model. Are your results consistent with your observations in (d) and (e)? Explain why or why not.
+
 ```{r, echo=TRUE}
 MP1$deviance
 
@@ -192,16 +130,7 @@ MP1$df.residual
 1-pchisq(MP1$deviance, MP1$df.residual) 
 ```
 
-```{r}
-library(ggformula)
 
-# Create the chi-square distribution plot
-gf_dist("chisq", df = MP1$df.residual, geom = "area", fill = "turquoise") + 
-  geom_vline(xintercept = MP1$deviance, colour = "red", linetype = "dashed") +
-  
-  theme(legend.position = "none") +
-  ylim(c(0, 0.1))
-```
 The goodness-of-fit test results show a residual deviance of 51.01 with 39 degrees of freedom, and a p-value of 0.094, which is not statistically significant. This suggests that the Poisson model is an adequate fit for the data overall. The visualization further supports this, as the observed deviance falls within the expected range of the chi-square distribution.
 
 These results are partially consistent with the observations from (d) and (e). In (d), the log-linear plot suggested that a Poisson model was reasonable in terms of linearity. However, in (e), we observed overdispersion and underdispersion in different age groups, which could suggest some deviation from Poisson assumptions. While the overall goodness-of-fit test does not indicate a poor fit, the variance patterns in (e) still suggest that it might be be worth using a quasi-Poisson model.
@@ -230,58 +159,20 @@ We want to model the number of moths removed out of the total number placed, usi
 The response variable represents the proportion of moths removed out of the total placed. Since each moth is either removed or not, the data follows a binomial outcome. The most appropriate model for this data is Binomial Logistic Regression.
 
 ### b) Fit the model you chose. Display the summary output.
-I will make a new column called REMAINING using PLACED - REMOVED
-```{r}
-# Create the REMAINING column
-moth <- moth %>%
-  mutate(REMAINING = PLACED - REMOVED)
 
-kable(head(moth))
-```
-
-
-```{r, echo = TRUE}
-
-MB1 <- glm(cbind(REMOVED, REMAINING) ~ DISTANCE + MORPH , family = binomial(link="logit"), data = moth)
-```
 
 # MB1
 
-Consider $Y_{i}$ to represent the number of moths removed for the $i$-th observation, where each $Y_{i}$ follows a binomial distribution.
-$$
-Y_{i} \sim \text{Binomial}(n_{i}, p_{i})
-$$
-
-Here, $n_{i}$ is the total number of moths placed, and $p_{i}$ is the probability of a moth being removed. The relationship between the probability of removal and the explanatory variables is given by:
-
-$$
-\log\left(\frac{p_{i}}{1 - p_{i}}\right) = \beta_{0} + \beta_{1} \text{DISTANCE} + \beta_{2} \text{MORPH}
-$$
-
 ```{r, echo = TRUE}
-# Call:
-# glm(formula = cbind(REMOVED, REMAINING) ~ DISTANCE + MORPH, family = binomial(link = "logit"), 
-#     data = moth)
-# 
-# Coefficients:
-#              Estimate Std. Error z value Pr(>|z|)    
-# (Intercept) -0.732690   0.151221  -4.845 1.27e-06 ***
-# DISTANCE     0.005314   0.004002   1.328  0.18422    
-# MORPHlight  -0.404052   0.139377  -2.899  0.00374 ** 
-# ---
-# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
-# 
-# (Dispersion parameter for binomial family taken to be 1)
-# 
-#     Null deviance: 35.385  on 13  degrees of freedom
-# Residual deviance: 25.161  on 11  degrees of freedom
-# AIC: 93.836
-# 
-# Number of Fisher Scoring iterations: 4
 
+MB1 <- glm(cbind(REMOVED, PLACED -REMOVED) ~ DISTANCE + MORPH , family = binomial(link="logit"), data = moth)
+
+summary(MB1)
 ```
 
+
 # Exponetiated MB1 Coefficients:
+
 ```{r}
 # Calculate the exponentiated coefficients (rate ratios)
 exp_coef2 <- exp(coef(MB1))
@@ -290,11 +181,9 @@ exp_coef2 <- exp(coef(MB1))
 exp_coef2
 ```
 
-
 ### c) Write sentences interpreting the coefficients associated with the `DISTANCE` and `MORPH` variables.
 
 The DISTANCE coefficient (1.0053) suggests that for each 1 km increase, the odds of removal increase by 0.53%, though this effect is not statistically significant (p = 0.184). The MORPH coefficient (0.668) shows that light morph moths have 33.2% lower odds of being removed compared to dark morphs (p = 0.0037), suggesting that dark moths are more likely to survive, supporting the camouflage hypothesis.
-
 
 ### d) Calculate the probability of a moth being removed assuming it is 15 km from Liverpool and is light `MORPH`. Then, calculate the probability of a moth being removed assuming it is 35 km from Liverpool and is dark `MORPH`.
 
@@ -317,12 +206,11 @@ print("Probability of light moth being removed with distance of 15km from Liverp
 prob_light_15
 
 ```
+
 ```{r}
 print("Probability of dark moth being removed with distance of 35km from Liverpool")
 prob_dark_35
 ```
-
-
 
 ### A logit is the log of the odds of a moth being removed within 24 hours. The following code will create an empirical logit plot of logits vs. distance, faceted by morph.
 
@@ -347,43 +235,17 @@ The empirical logit plots suggest a potential interaction between morph and dist
 
 # MB2
 
-$$
-\log\left(\frac{p_{i}}{1 - p_{i}}\right) = \beta_{0} + \beta_{1} \text{DISTANCE} + \beta_{2} \text{MORPH} + \beta_{3} \text{DISTANCE} \times \text{MORPH}
-$$
 ```{r, echo=TRUE}
-MB2 <- glm(cbind(REMOVED, REMAINING) ~ DISTANCE * MORPH, 
+MB2 <- glm(cbind(REMOVED, PLACED - REMOVED) ~ DISTANCE * MORPH, 
                               family = binomial(link = "logit"), 
                               data = moth)
+
+summary(MB2)
 ```
 
-
-
-```{r, echo=TRUE}
-# 
-# Call:
-# glm(formula = cbind(REMOVED, REMAINING) ~ DISTANCE * MORPH, family = binomial(link = "logit"), 
-#     data = moth)
-# 
-# Coefficients:
-#                      Estimate Std. Error z value Pr(>|z|)    
-# (Intercept)         -1.128987   0.197906  -5.705 1.17e-08 ***
-# DISTANCE             0.018502   0.005645   3.277 0.001048 ** 
-# MORPHlight           0.411257   0.274490   1.498 0.134066    
-# DISTANCE:MORPHlight -0.027789   0.008085  -3.437 0.000588 ***
-# ---
-# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
-# 
-# (Dispersion parameter for binomial family taken to be 1)
-# 
-#     Null deviance: 35.385  on 13  degrees of freedom
-# Residual deviance: 13.230  on 10  degrees of freedom
-# AIC: 83.904
-# 
-# Number of Fisher Scoring iterations: 4
-
-```
 
 # Exponentiated Coefficients
+
 ```{r}
 # Calculate the exponentiated coefficients (rate ratios)
 exp_coef3 <- exp(coef(MB2))
@@ -391,30 +253,20 @@ exp_coef3 <- exp(coef(MB2))
 # Display the exponentiated coefficients
 exp_coef3
 ```
+
 ### g) As distance gets farther from the city, do light moths become more or less likely to be removed? What about dark moths? Cite values from your model output in (f) to justify your answer.
+
 The exponentiated coefficients show that dark moths become more likely to be removed as distance increases, with the odds of removal increasing by 1.87% per kilometer (1.0187). In contrast, light moths become less likely to be removed further from Liverpool, as indicated by the interaction term (0.9726), meaning their odds of removal decrease by 2.74% per kilometer. At 0 km (Liverpool), light moths initially have 50.87% higher odds of being removed than dark moths (1.5087), but this effect diminishes with distance. These results support the idea that light moths gain a survival advantage in less polluted areas, where tree trunks are lighter, while dark moths are more vulnerable when further from the city.
 
 #### h) Perform a drop-in-deviance test whether there is evidence of an interaction between distance and morph. Explain your conclusion in context.
+
 ```{r, echo=TRUE}
 anova(MB1, MB2, test = "Chisq")
-```
-```{r}
-# Model 1: cbind(REMOVED, REMAINING) ~ DISTANCE + MORPH
-# Model 2: cbind(REMOVED, REMAINING) ~ DISTANCE * MORPH
-#   Resid. Df Resid. Dev Df Deviance  Pr(>Chi)    
-# 1        11     25.161                          
-# 2        10     13.230  1   11.931 0.0005519 ***
-# ---
-# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
 ```
 
-```{r}
-gf_dist("chisq", df =  1, geom = "area", fill = ~ !(x > 11.9)) + 
-  geom_vline(xintercept=11.9, colour="red")  + theme(legend.position="none") + ylim(c(0,1))
-```
 The drop-in-deviance test shows a significant reduction in deviance (11.931, p = 0.00055) when adding the interaction term between distance and morph, indicating that the interaction significantly improves model fit. This suggests that the effect of distance on moth removal differs between light and dark morphs.
-
-The visualization of the chi-square distribution further supports this conclusion. The observed statistic, indicates a very low probability that the improvement in model fit is due to chance.
 
 #### i) Test the goodness-of-fit for the interaction model. What can we conclude about this model?
 
@@ -426,18 +278,5 @@ MB2$df.residual
 1-pchisq(MB2$deviance, MB2$df.residual) 
 ```
 
-```{r}
 
-# Create the chi-square distribution plot
-gf_dist("chisq", df = MB2$df.residual, geom = "area", fill = "turquoise") + 
-  geom_vline(xintercept = MB2$deviance, colour = "red", linetype = "dashed") +
-  
-  theme(legend.position = "none") +
-  ylim(c(0, 0.1))
-```
-The goodness-of-fit test for the interaction model shows a residual deviance of 13.23 with 10 degrees of freedom, resulting in a p-value of 0.211. Since the p-value is greater than 0.05, we do not have strong evidence to reject the model, indicating that it fits the data well. The chi-square distribution visualization further supports this conclusion, as the observed deviance falls within an expected range, suggesting that the model adequately captures the variability in moth removal.
-
-
-
-
-
+The goodness-of-fit test for the interaction model shows a residual deviance of 13.23 with 10 degrees of freedom, resulting in a p-value of 0.211. Since the p-value is greater than 0.05, we do not have strong evidence to reject the model, indicating that it fits the data well. The observed deviance falls within an expected range, suggesting that the model adequately captures the variability in moth removal.
